@@ -3,7 +3,7 @@
 #include "ll/api/command/Command.h"
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/item/ItemStack.h"
-#include "mc/world/item/registry/ItemStackRequestActionHandler.h"
+#include "mc/world/inventory/network/ItemStackRequestActionHandler.h"
 
 namespace my_mod {
 
