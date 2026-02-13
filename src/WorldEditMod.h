@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "ll/api/mod/NativeMod.h"
@@ -26,3 +27,4 @@ private:
 };
 
 }
+
