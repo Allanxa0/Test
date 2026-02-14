@@ -10,6 +10,7 @@
 #include "mc/world/level/dimension/Dimension.h"
 #include "mc/world/level/dimension/IDimension.h"
 #include "mc/world/level/BlockPos.h"
+#include "mc/world/level/block/BlockChangeContext.h"
 #include <algorithm>
 
 namespace my_mod {
@@ -57,12 +58,15 @@ void registerSetCommand() {
             int maxZ = std::max(p1.z, p2.z);
 
             auto& region = player->getDimension().getBlockSourceFromMainChunkSource();
+            
+            BlockChangeContext context(true); 
+            
             int count = 0;
 
             for (int x = minX; x <= maxX; ++x) {
                 for (int y = minY; y <= maxY; ++y) {
                     for (int z = minZ; z <= maxZ; ++z) {
-                        region.setBlock(BlockPos(x, y, z), blockToSet, 3);
+                        region.setBlock(BlockPos(x, y, z), blockToSet, 3, nullptr, context);
                         count++;
                     }
                 }
