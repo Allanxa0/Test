@@ -9,6 +9,7 @@
 #include "mc/world/level/block/registry/BlockTypeRegistry.h"
 #include "mc/world/level/dimension/Dimension.h"
 #include "mc/world/level/dimension/IDimension.h"
+#include "mc/world/level/BlockPos.h"
 #include <algorithm>
 
 namespace my_mod {
@@ -61,7 +62,7 @@ void registerSetCommand() {
             for (int x = minX; x <= maxX; ++x) {
                 for (int y = minY; y <= maxY; ++y) {
                     for (int z = minZ; z <= maxZ; ++z) {
-                        region.setBlock({x, y, z}, blockToSet, 3);
+                        region.setBlock(BlockPos(x, y, z), blockToSet, 3);
                         count++;
                     }
                 }
