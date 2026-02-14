@@ -1,7 +1,8 @@
-
 #include "WorldEditMod.h"
 #include "ll/api/command/CommandRegistrar.h"
+#include "ll/api/command/CommandHandle.h"
 #include "ll/api/command/Command.h"
+#include "mc/server/commands/CommandOutput.h"
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/level/BlockSource.h"
 #include "mc/world/level/block/Block.h"
@@ -15,7 +16,7 @@ struct SetParams {
 };
 
 void registerSetCommand() {
-    auto& registrar = ll::command::CommandRegistrar::getInstance();
+    auto& registrar = ll::command::CommandRegistrar::getInstance(false);
 
     auto setCmd = registrar.getOrCreateCommand("set", "Set blocks in selection");
     setCmd.overload<SetParams>()
@@ -68,4 +69,3 @@ void registerSetCommand() {
 }
 
 }
-
