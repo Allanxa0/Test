@@ -10,7 +10,7 @@ namespace my_mod {
 void registerWandCommand() {
     auto& registrar = ll::command::CommandRegistrar::getInstance(false);
 
-    auto wandCmd = registrar.getOrCreateCommand("wand", "Get the WorldEdit wand");
+    auto& wandCmd = registrar.getOrCreateCommand("wand", "Get the WorldEdit wand");
     wandCmd.overload().execute([](CommandOrigin const& origin, CommandOutput& output) {
         auto* entity = origin.getEntity();
         if (!entity || !entity->isType(ActorType::Player)) {
