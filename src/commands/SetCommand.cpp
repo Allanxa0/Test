@@ -18,7 +18,7 @@ struct SetParams {
 void registerSetCommand() {
     auto& registrar = ll::command::CommandRegistrar::getInstance(false);
 
-    auto setCmd = registrar.getOrCreateCommand("set", "Set blocks in selection");
+    auto& setCmd = registrar.getOrCreateCommand("set", "Set blocks in selection");
     setCmd.overload<SetParams>()
         .required("pattern")
         .execute([](CommandOrigin const& origin, CommandOutput& output, SetParams const& params) {
