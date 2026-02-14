@@ -4,7 +4,6 @@
 #include "mc/server/commands/CommandOutput.h"
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/item/ItemStack.h"
-#include "mc/world/inventory/network/ItemStackRequestActionHandler.h"
 
 namespace my_mod {
 
@@ -20,8 +19,12 @@ void registerWandCommand() {
         }
 
         auto* player = static_cast<Player*>(entity);
-        ItemStack item("minecraft:wooden_axe", 1);
+        
+        ItemStack item;
+        item.reinit("minecraft:wooden_axe", 1, 0);
+        
         player->add(item);
+        player->refreshInventory();
 
         output.success("Left click: select pos #1; Right click: select pos #2");
     });
