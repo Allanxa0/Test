@@ -1,6 +1,6 @@
-
 #include "WorldEditMod.h"
 #include "commands/WECommands.h"
+#include "listeners/WEListener.h"
 #include "ll/api/mod/RegisterHelper.h"
 
 namespace my_mod {
@@ -16,6 +16,7 @@ bool WorldEditMod::load() {
 
 bool WorldEditMod::enable() {
     WECommands::registerCommands();
+    WEListener::registerListeners(); 
     return true;
 }
 
@@ -26,4 +27,3 @@ bool WorldEditMod::disable() {
 }
 
 LL_REGISTER_MOD(my_mod::WorldEditMod, my_mod::WorldEditMod::getInstance());
-
