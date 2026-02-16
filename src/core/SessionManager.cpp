@@ -4,6 +4,11 @@
 
 namespace my_mod {
 
+SessionManager& SessionManager::getInstance() {
+    static SessionManager instance;
+    return instance;
+}
+
 Selection& SessionManager::getSelection(Player& player) {
     return mSessions[player.getXuid()];
 }
@@ -22,29 +27,37 @@ void SessionManager::setPos2(Player& player, const BlockPos& pos) {
 
 void SessionManager::removeSelection(Player& player) {
     mSessions.erase(player.getXuid());
-    mHistory.erase(player.getXuid());
+    mUndoHistory.erase(player.getXuid());
+    mRedoHistory.erase(player.getXuid());
 }
 
-void SessionManager::pushHistory(Player& player, std::vector<BlockEdit>&& edits) {
-    mHistory[player.getXuid()].push({std::move(edits)});
+void SessionManager::pushHistory(Player& player, EditAction&& action) {
+    mUndoHistory[player.getXuid()].push(std::move(action));
+    while (!mRedoHistory[player.getXuid()].empty()) {
+        mRedoHistory[player.getXuid()].pop();
+    }
 }
 
-bool SessionManager::undo(Player& player) {
-    auto& history = mHistory[player.getXuid()];
-    if (history.empty()) return false;
+std::optional<EditAction> SessionManager::popUndo(Player& player) {
+    auto& history = mUndoHistory[player.getXuid()];
+    if (history.empty()) return std::nullopt;
 
     auto action = std::move(history.top());
     history.pop();
+    return action;
+}
 
-    auto& region = player.getDimension().getBlockSourceFromMainChunkSource();
-    BlockChangeContext context(true);
+void SessionManager::pushRedo(Player& player, EditAction&& action) {
+    mRedoHistory[player.getXuid()].push(std::move(action));
+}
 
-    for (const auto& edit : action.blocks) {
-        if (edit.dim == player.getDimensionId()) {
-            region.setBlock(edit.pos, *edit.oldBlock, 3, nullptr, context);
-        }
-    }
-    return true;
+std::optional<EditAction> SessionManager::popRedo(Player& player) {
+    auto& history = mRedoHistory[player.getXuid()];
+    if (history.empty()) return std::nullopt;
+
+    auto action = std::move(history.top());
+    history.pop();
+    return action;
 }
 
 }

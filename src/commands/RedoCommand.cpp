@@ -15,12 +15,12 @@ using namespace ll::chrono_literals;
 
 namespace my_mod {
 
-ll::coro::CoroTask<void> executeUndoTask(Player* player, EditAction action) {
+ll::coro::CoroTask<void> executeRedoTask(Player* player, EditAction action) {
     auto& region = player->getDimension().getBlockSourceFromMainChunkSource();
     BlockChangeContext context(true);
     
-    std::vector<BlockEdit> redoList;
-    redoList.reserve(action.blocks.size());
+    std::vector<BlockEdit> undoList;
+    undoList.reserve(action.blocks.size());
 
     auto startTime = std::chrono::steady_clock::now();
     const auto timeBudget = std::chrono::milliseconds(30);
@@ -35,7 +35,7 @@ ll::coro::CoroTask<void> executeUndoTask(Player* player, EditAction action) {
             actor->save(*currentNbt);
         }
 
-        redoList.push_back({it->pos, &currentBlock, std::move(currentNbt), it->dim});
+        undoList.push_back({it->pos, &currentBlock, std::move(currentNbt), it->dim});
 
         region.setBlock(it->pos, *it->oldBlock, 3, nullptr, context);
 
@@ -51,16 +51,16 @@ ll::coro::CoroTask<void> executeUndoTask(Player* player, EditAction action) {
         }
     }
 
-    WorldEditMod::getInstance().getSessionManager().pushRedo(*player, {std::move(redoList)});
-    player->sendMessage("§aUndo completed successfully.");
+    WorldEditMod::getInstance().getSessionManager().pushHistory(*player, {std::move(undoList)});
+    player->sendMessage("§aRedo completed successfully.");
     co_return;
 }
 
-void registerUndoCommand() {
+void registerRedoCommand() {
     auto& registrar = ll::command::CommandRegistrar::getInstance(false);
-    auto& undoCmd = registrar.getOrCreateCommand("undo", "Undo last operation");
+    auto& redoCmd = registrar.getOrCreateCommand("redo", "Redo last operation");
 
-    undoCmd.overload().execute([](CommandOrigin const& origin, CommandOutput& output) {
+    redoCmd.overload().execute([](CommandOrigin const& origin, CommandOutput& output) {
         auto* entity = origin.getEntity();
         if (!entity || !entity->isType(ActorType::Player)) {
             output.error("Only players can use this command");
@@ -73,13 +73,13 @@ void registerUndoCommand() {
             return;
         }
 
-        auto actionOpt = WorldEditMod::getInstance().getSessionManager().popUndo(*player);
+        auto actionOpt = WorldEditMod::getInstance().getSessionManager().popRedo(*player);
 
         if (actionOpt.has_value()) {
-            executeUndoTask(player, std::move(actionOpt.value())).launch(ll::thread::ServerThreadExecutor::getDefault());
-            output.success("§aUndo operation started...");
+            executeRedoTask(player, std::move(actionOpt.value())).launch(ll::thread::ServerThreadExecutor::getDefault());
+            output.success("§aRedo operation started...");
         } else {
-            output.error("Nothing to undo.");
+            output.error("Nothing to redo.");
         }
     });
 }

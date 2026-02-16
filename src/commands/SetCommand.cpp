@@ -9,6 +9,7 @@
 #include "mc/world/level/dimension/Dimension.h"
 #include "mc/world/level/BlockPos.h"
 #include "mc/world/level/block/BlockChangeContext.h"
+#include "mc/world/level/block/actor/BlockActor.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/thread/ServerThreadExecutor.h"
 #include <algorithm>
@@ -47,8 +48,16 @@ ll::coro::CoroTask<void> executeSetTask(Player* player, BlockPos p1, BlockPos p2
                 BlockPos targetPos(x, y, z);
                 const Block& oldBlock = region.getBlock(targetPos);
                 
-                undoHistory.push_back({targetPos, &oldBlock, dim});
+                std::unique_ptr<CompoundTag> oldNbt = nullptr;
+                if (auto* actor = region.getBlockEntity(targetPos)) {
+                    oldNbt = std::make_unique<CompoundTag>();
+                    actor->save(*oldNbt);
+                }
+
+                undoHistory.push_back({targetPos, &oldBlock, std::move(oldNbt), dim});
+                
                 region.setBlock(targetPos, *blockToSet, 3, nullptr, context);
+                
                 count++;
                 
                 if (std::chrono::steady_clock::now() - startTime >= timeBudget) {
@@ -59,8 +68,8 @@ ll::coro::CoroTask<void> executeSetTask(Player* player, BlockPos p1, BlockPos p2
         }
     }
 
-    WorldEditMod::getInstance().getSessionManager().pushHistory(*player, std::move(undoHistory));
-    player->sendMessage("Operation completed. " + std::to_string(count) + " blocks affected.");
+    WorldEditMod::getInstance().getSessionManager().pushHistory(*player, {std::move(undoHistory)});
+    player->sendMessage("§aOperation completed. " + std::to_string(count) + " blocks affected.");
     co_return;
 }
 
@@ -78,6 +87,11 @@ void registerSetCommand() {
             }
 
             auto* player = static_cast<Player*>(entity);
+            if (!player->isOperator()) {
+                output.error("You do not have permission to use this command.");
+                return;
+            }
+
             auto& session = WorldEditMod::getInstance().getSessionManager().getSelection(*player);
 
             if (!session.isComplete()) {
@@ -90,9 +104,14 @@ void registerSetCommand() {
                 return;
             }
 
-            auto blockOpt = Block::tryGetFromRegistry(params.pattern);
+            std::string blockName = params.pattern;
+            if (blockName.find(':') == std::string::npos) {
+                blockName = "minecraft:" + blockName;
+            }
+
+            auto blockOpt = Block::tryGetFromRegistry(blockName);
             if (!blockOpt.has_value()) {
-                output.error("Invalid block pattern: " + params.pattern);
+                output.error("Invalid block pattern: " + blockName);
                 return;
             }
             
@@ -102,7 +121,7 @@ void registerSetCommand() {
 
             executeSetTask(player, p1, p2, blockToSet, session.dimId.value()).launch(ll::thread::ServerThreadExecutor::getDefault());
             
-            output.success("Set operation started in the background...");
+            output.success("§aSet operation started in the background...");
         });
 }
 
