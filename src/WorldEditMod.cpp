@@ -1,7 +1,9 @@
 #include "WorldEditMod.h"
 #include "commands/WECommands.h"
-#include "listeners/WEListener.h"
+#include "listeners/PositionListener.h"
 #include "ll/api/mod/RegisterHelper.h"
+#include "ll/api/event/EventBus.h"
+#include "ll/api/event/player/PlayerDisconnectEvent.h"
 
 namespace my_mod {
 
@@ -16,7 +18,16 @@ bool WorldEditMod::load() {
 
 bool WorldEditMod::enable() {
     WECommands::registerCommands();
-    WEListener::registerListeners(); 
+    PositionListener::registerListeners();
+
+    auto& bus = ll::event::EventBus::getInstance();
+
+    bus.addListener<ll::event::player::PlayerDisconnectEvent>(
+        [this](ll::event::player::PlayerDisconnectEvent& ev) {
+            mSessionManager.removeSelection(ev.self());
+        }
+    );
+
     return true;
 }
 
@@ -27,3 +38,4 @@ bool WorldEditMod::disable() {
 }
 
 LL_REGISTER_MOD(my_mod::WorldEditMod, my_mod::WorldEditMod::getInstance());
+
