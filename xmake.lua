@@ -22,6 +22,7 @@ target("World-Edit")
     add_rules("@levibuildscript/modpacker")
 
     add_cxflags("/EHa", "/utf-8", "/W4", "/w44265", "/w44289", "/w44296", "/w45263", "/w44738", "/w45204")
+    add_cxflags("/continueAfterError")
     add_defines("NOMINMAX", "UNICODE")
     add_packages("levilamina")
     set_exceptions("none")
