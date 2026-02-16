@@ -4,6 +4,9 @@
 #include "mc/server/commands/CommandOutput.h"
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/item/ItemStack.h"
+#include "mc/nbt/CompoundTag.h"
+#include "mc/nbt/ListTag.h"
+#include <memory>
 
 namespace my_mod {
 
@@ -23,11 +26,15 @@ void registerWandCommand() {
         ItemStack item;
         item.reinit("minecraft:wooden_axe", 1, 0);
         
-        player->add(item);
-        player->refreshInventory();
+        auto tag = std::make_unique<CompoundTag>();
+        (*tag)["ench"] = ListTag();
+        item.setUserData(std::move(tag));
+        
+        player->addAndRefresh(item);
 
         output.success("Left click: select pos #1; Right click: select pos #2");
     });
 }
 
 }
+

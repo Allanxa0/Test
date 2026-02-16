@@ -5,8 +5,25 @@
 #include "mc/server/commands/CommandOutput.h"
 #include "mc/world/actor/player/Player.h"
 #include "mc/deps/core/math/Vec3.h"
+#include "mc/world/level/BlockSource.h"
+#include "mc/world/level/HitResult.h"
 
 namespace my_mod {
+
+BlockPos getTargetBlock(Player* player) {
+    const float maxDist = 20.0f;
+    Vec3 pos = player->getPosition();
+    pos.y += player->getHeadHeight();
+    Vec3 dir = player->getViewVector(1.0f);
+    Vec3 end = pos + (dir * maxDist);
+
+    HitResult hit = player->getDimension().getBlockSourceFromMainChunkSource().checkBlockRayTrace(pos, end, false, false, false);
+    
+    if (hit.mType == HitResultType::Block) {
+        return hit.mBlockPos;
+    }
+    return BlockPos(player->getPosition());
+}
 
 void registerPosCommands() {
     auto& registrar = ll::command::CommandRegistrar::getInstance(false);
@@ -20,11 +37,11 @@ void registerPosCommands() {
         }
 
         auto* player = static_cast<Player*>(entity);
-        BlockPos pos(player->getPosition());
+        BlockPos pos = getTargetBlock(player);
         
         WorldEditMod::getInstance().getSessionManager().setPos1(*player, pos);
         
-        output.success("First position set to " + std::to_string(pos.x) + ", " + std::to_string(pos.y) + ", " + std::to_string(pos.z));
+        output.success("First position set to " + pos.toString());
     });
 
     auto& pos2Cmd = registrar.getOrCreateCommand("pos2", "Set position 2");
@@ -36,11 +53,11 @@ void registerPosCommands() {
         }
 
         auto* player = static_cast<Player*>(entity);
-        BlockPos pos(player->getPosition());
+        BlockPos pos = getTargetBlock(player);
 
         WorldEditMod::getInstance().getSessionManager().setPos2(*player, pos);
 
-        output.success("Second position set to " + std::to_string(pos.x) + ", " + std::to_string(pos.y) + ", " + std::to_string(pos.z));
+        output.success("Second position set to " + pos.toString());
     });
 }
 

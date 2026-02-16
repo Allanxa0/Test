@@ -6,18 +6,63 @@
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/level/BlockSource.h"
 #include "mc/world/level/block/Block.h"
-#include "mc/world/level/block/registry/BlockTypeRegistry.h"
 #include "mc/world/level/dimension/Dimension.h"
-#include "mc/world/level/dimension/IDimension.h"
 #include "mc/world/level/BlockPos.h"
 #include "mc/world/level/block/BlockChangeContext.h"
+#include "ll/api/coro/CoroTask.h"
+#include "ll/api/thread/ServerThreadExecutor.h"
 #include <algorithm>
+#include <chrono>
+
+using namespace ll::chrono_literals;
 
 namespace my_mod {
 
 struct SetParams {
     std::string pattern;
 };
+
+ll::coro::CoroTask<void> executeSetTask(Player* player, BlockPos p1, BlockPos p2, const Block* blockToSet, DimensionType dim) {
+    int minX = std::min(p1.x, p2.x);
+    int minY = std::min(p1.y, p2.y);
+    int minZ = std::min(p1.z, p2.z);
+    int maxX = std::max(p1.x, p2.x);
+    int maxY = std::max(p1.y, p2.y);
+    int maxZ = std::max(p1.z, p2.z);
+
+    auto& region = player->getDimension().getBlockSourceFromMainChunkSource();
+    BlockChangeContext context(true); 
+    
+    std::vector<BlockEdit> undoHistory;
+    int estimatedCount = (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
+    undoHistory.reserve(estimatedCount);
+
+    int count = 0;
+    auto startTime = std::chrono::steady_clock::now();
+    const auto timeBudget = std::chrono::milliseconds(30);
+
+    for (int x = minX; x <= maxX; ++x) {
+        for (int y = minY; y <= maxY; ++y) {
+            for (int z = minZ; z <= maxZ; ++z) {
+                BlockPos targetPos(x, y, z);
+                const Block& oldBlock = region.getBlock(targetPos);
+                
+                undoHistory.push_back({targetPos, &oldBlock, dim});
+                region.setBlock(targetPos, *blockToSet, 3, nullptr, context);
+                count++;
+                
+                if (std::chrono::steady_clock::now() - startTime >= timeBudget) {
+                    co_await 1_tick;
+                    startTime = std::chrono::steady_clock::now();
+                }
+            }
+        }
+    }
+
+    WorldEditMod::getInstance().getSessionManager().pushHistory(*player, std::move(undoHistory));
+    player->sendMessage("Operation completed. " + std::to_string(count) + " blocks affected.");
+    co_return;
+}
 
 void registerSetCommand() {
     auto& registrar = ll::command::CommandRegistrar::getInstance(false);
@@ -40,40 +85,26 @@ void registerSetCommand() {
                 return;
             }
 
+            if (session.dimId.value() != player->getDimensionId()) {
+                output.error("Selection is in a different dimension.");
+                return;
+            }
+
             auto blockOpt = Block::tryGetFromRegistry(params.pattern);
             if (!blockOpt.has_value()) {
                 output.error("Invalid block pattern: " + params.pattern);
                 return;
             }
-            const Block& blockToSet = *blockOpt;
-
+            
+            const Block* blockToSet = &(*blockOpt);
             BlockPos p1 = session.pos1.value();
             BlockPos p2 = session.pos2.value();
 
-            int minX = std::min(p1.x, p2.x);
-            int minY = std::min(p1.y, p2.y);
-            int minZ = std::min(p1.z, p2.z);
-            int maxX = std::max(p1.x, p2.x);
-            int maxY = std::max(p1.y, p2.y);
-            int maxZ = std::max(p1.z, p2.z);
-
-            auto& region = player->getDimension().getBlockSourceFromMainChunkSource();
+            executeSetTask(player, p1, p2, blockToSet, session.dimId.value()).launch(ll::thread::ServerThreadExecutor::getDefault());
             
-            BlockChangeContext context(true); 
-            
-            int count = 0;
-
-            for (int x = minX; x <= maxX; ++x) {
-                for (int y = minY; y <= maxY; ++y) {
-                    for (int z = minZ; z <= maxZ; ++z) {
-                        region.setBlock(BlockPos(x, y, z), blockToSet, 3, nullptr, context);
-                        count++;
-                    }
-                }
-            }
-
-            output.success("Operation completed. " + std::to_string(count) + " blocks affected.");
+            output.success("Set operation started in the background...");
         });
 }
 
 }
+
