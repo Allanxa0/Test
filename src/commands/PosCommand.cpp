@@ -14,8 +14,7 @@ namespace my_mod {
 
 BlockPos getTargetBlock(Player* player) {
     const float maxDist = 20.0f;
-    Vec3 pos = player->getPosition();
-    pos.y += player->getHeadHeight();
+    Vec3 pos = player->getEyePos();
     Vec3 dir = player->getViewVector(1.0f);
     Vec3 end = pos + (dir * maxDist);
 
@@ -32,8 +31,8 @@ BlockPos getTargetBlock(Player* player) {
         false
     );
     
-    if (hit.mType == HitResultType::Block) {
-        return hit.mBlockPos;
+    if (hit.mType == HitResultType::Tile) {
+        return hit.mBlock;
     }
     return BlockPos(player->getPosition());
 }
