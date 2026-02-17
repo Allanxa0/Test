@@ -1,22 +1,32 @@
 #pragma once
+
 #include "ll/api/mod/NativeMod.h"
 #include "core/SessionManager.h"
+
 namespace my_mod {
+
 class WorldEditMod {
 public:
-static WorldEditMod& getInstance();
-WorldEditMod() : mSelf(*ll::mod::NativeMod::current()) {}
+    static WorldEditMod& getInstance();
 
-[[nodiscard]] ll::mod::NativeMod& getSelf() const { return mSelf; }
+    WorldEditMod()
+        : mSelf(*ll::mod::NativeMod::current()) {}
 
-[[nodiscard]] SessionManager& getSessionManager() { return mSessionManager; }
+    [[nodiscard]] ll::mod::NativeMod& getSelf() const {
+        return mSelf;
+    }
 
-bool load();
-bool enable();
-bool disable();
+    [[nodiscard]] SessionManager& getSessionManager() {
+        return mSessionManager;
+    }
+
+    bool load();
+    bool enable();
+    bool disable();
 
 private:
-ll::mod::NativeMod& mSelf;
-SessionManager mSessionManager;
+    ll::mod::NativeMod& mSelf;
+    SessionManager mSessionManager;
 };
+
 }
