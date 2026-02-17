@@ -6,7 +6,7 @@
 #include "mc/world/actor/player/Player.h"
 #include "mc/deps/core/math/Vec3.h"
 #include "mc/world/level/BlockSource.h"
-#include "mc/world/level/HitResult.h"
+#include "mc/world/phys/HitResult.h"
 
 namespace my_mod {
 
