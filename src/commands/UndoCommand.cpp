@@ -9,9 +9,10 @@
 #include "mc/world/level/block/actor/BlockActor.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/thread/ServerThreadExecutor.h"
+#include "ll/api/chrono/GameChrono.h"
+#include "mc/dataloadhelper/NewUniqueIdsDataLoadHelper.h"
+#include "mc/world/level/Level.h"
 #include <chrono>
-
-using namespace ll::chrono_literals;
 
 namespace my_mod {
 
@@ -32,7 +33,7 @@ ll::coro::CoroTask<void> executeUndoTask(Player* player, EditAction action) {
         std::unique_ptr<CompoundTag> currentNbt = nullptr;
         if (auto* actor = region.getBlockEntity(it->pos)) {
             currentNbt = std::make_unique<CompoundTag>();
-            actor->save(*currentNbt);
+            actor->saveBlockData(*currentNbt, region);
         }
 
         redoList.push_back({it->pos, &currentBlock, std::move(currentNbt), it->dim});
@@ -41,12 +42,14 @@ ll::coro::CoroTask<void> executeUndoTask(Player* player, EditAction action) {
 
         if (it->oldNbt) {
             if (auto* actor = region.getBlockEntity(it->pos)) {
-                actor->load(*it->oldNbt);
+                NewUniqueIdsDataLoadHelper helper;
+                helper.mLevel = &player->getLevel();
+                actor->loadBlockData(*it->oldNbt, region, helper);
             }
         }
 
         if (std::chrono::steady_clock::now() - startTime >= timeBudget) {
-            co_await 1_tick;
+            co_await ll::chrono::ticks(1);
             startTime = std::chrono::steady_clock::now();
         }
     }
@@ -85,4 +88,3 @@ void registerUndoCommand() {
 }
 
 }
-

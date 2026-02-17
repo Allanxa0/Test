@@ -12,10 +12,9 @@
 #include "mc/world/level/block/actor/BlockActor.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/thread/ServerThreadExecutor.h"
+#include "ll/api/chrono/GameChrono.h"
 #include <algorithm>
 #include <chrono>
-
-using namespace ll::chrono_literals;
 
 namespace my_mod {
 
@@ -51,7 +50,7 @@ ll::coro::CoroTask<void> executeSetTask(Player* player, BlockPos p1, BlockPos p2
                 std::unique_ptr<CompoundTag> oldNbt = nullptr;
                 if (auto* actor = region.getBlockEntity(targetPos)) {
                     oldNbt = std::make_unique<CompoundTag>();
-                    actor->save(*oldNbt);
+                    actor->saveBlockData(*oldNbt, region);
                 }
 
                 undoHistory.push_back({targetPos, &oldBlock, std::move(oldNbt), dim});
@@ -61,7 +60,7 @@ ll::coro::CoroTask<void> executeSetTask(Player* player, BlockPos p1, BlockPos p2
                 count++;
                 
                 if (std::chrono::steady_clock::now() - startTime >= timeBudget) {
-                    co_await 1_tick;
+                    co_await ll::chrono::ticks(1);
                     startTime = std::chrono::steady_clock::now();
                 }
             }
@@ -126,4 +125,3 @@ void registerSetCommand() {
 }
 
 }
-
