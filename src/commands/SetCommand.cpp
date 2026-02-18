@@ -5,6 +5,7 @@
 #include "mc/server/commands/CommandOutput.h"
 #include "mc/server/commands/CommandBlockName.h"
 #include "mc/server/commands/CommandBlockNameResult.h"
+#include "mc/server/commands/CommandRawText.h"
 #include "mc/world/actor/player/Player.h"
 #include "mc/world/level/BlockSource.h"
 #include "mc/world/level/block/Block.h"
@@ -99,7 +100,7 @@ struct SetParamsBlock {
 };
 
 struct SetParamsPattern {
-    std::string patternStr;
+    CommandRawText patternStr;
 };
 
 ll::coro::CoroTask<void> executeSetTask(Player* player, BlockPos p1, BlockPos p2, std::vector<PatternEntry> pattern, DimensionType dim) {
@@ -208,7 +209,7 @@ void registerSetCommand() {
                 return;
             }
 
-            auto pattern = parsePattern(params.patternStr, output);
+            auto pattern = parsePattern(params.patternStr.mText, output);
             if (pattern.empty()) return;
 
             executeSetTask(player, session.pos1.value(), session.pos2.value(), pattern, session.dimId.value())
