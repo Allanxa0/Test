@@ -3,6 +3,7 @@
 #include "mc/world/level/BlockSource.h"
 #include "mc/network/packet/UpdateBlockPacket.h"
 #include "mc/world/level/block/Block.h"
+#include "mc/deps/core/string/HashedString.h"
 #include <algorithm>
 
 namespace my_mod {
@@ -87,10 +88,10 @@ void SessionManager::clearSelectionVisuals(Player& player) {
         
         const Block& realBlock = region.getBlock(pos);
         UpdateBlockPacket packet;
-        packet.mPos = pos;
-        packet.mLayer = 0;
-        packet.mFlags = 3; 
-        packet.mBlockRuntimeId = realBlock.getRuntimeId();
+        packet.mPayload.mPos = pos;
+        packet.mPayload.mLayer = 0;
+        packet.mPayload.mFlags = 3; 
+        packet.mPayload.mBlockRuntimeId = realBlock.mRuntimeId;
         
         player.sendNetworkPacket(packet);
     }
@@ -114,9 +115,9 @@ void SessionManager::updateSelectionVisuals(Player& player) {
     int maxY = std::max(p1.y, p2.y);
     int maxZ = std::max(p1.z, p2.z);
 
-    auto visualBlockOpt = Block::tryGetFromRegistry("minecraft:glass");
+    auto visualBlockOpt = Block::tryGetFromRegistry(HashedString("minecraft:glass"));
     if (!visualBlockOpt) return; 
-    uint visualRuntimeId = visualBlockOpt->getRuntimeId();
+    uint32_t visualRuntimeId = visualBlockOpt->mRuntimeId;
 
     std::vector<BlockPos>& visuals = mVisualBlocks[player.getXuid()];
     
@@ -130,21 +131,17 @@ void SessionManager::updateSelectionVisuals(Player& player) {
                 bool isMinZ = (z == minZ);
                 bool isMaxZ = (z == maxZ);
 
-                bool isEdgeX = isMinX || isMaxX;
-                bool isEdgeY = isMinY || isMaxY;
-                bool isEdgeZ = isMinZ || isMaxZ;
-
-                int edgeCount = (isEdgeX ? 1 : 0) + (isEdgeY ? 1 : 0) + (isEdgeZ ? 1 : 0);
+                int edgeCount = (isMinX || isMaxX ? 1 : 0) + (isMinY || isMaxY ? 1 : 0) + (isMinZ || isMaxZ ? 1 : 0);
 
                 if (edgeCount >= 2) {
                     BlockPos pos(x, y, z);
                     visuals.push_back(pos);
 
                     UpdateBlockPacket packet;
-                    packet.mPos = pos;
-                    packet.mLayer = 0;
-                    packet.mFlags = 3;
-                    packet.mBlockRuntimeId = visualRuntimeId;
+                    packet.mPayload.mPos = pos;
+                    packet.mPayload.mLayer = 0;
+                    packet.mPayload.mFlags = 3;
+                    packet.mPayload.mBlockRuntimeId = visualRuntimeId;
                     
                     player.sendNetworkPacket(packet);
                 }
@@ -161,4 +158,3 @@ void SessionManager::onPlayerLeft(Player& player) {
 }
 
 }
-
