@@ -14,6 +14,7 @@
 #include "mc/world/level/ChunkPos.h"
 #include "mc/world/level/block/BlockChangeContext.h"
 #include "mc/world/level/block/actor/BlockActor.h"
+#include "mc/world/level/block/actor/SaveContext.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/thread/ServerThreadExecutor.h"
 #include "ll/api/chrono/GameChrono.h"
@@ -144,7 +145,7 @@ ll::coro::CoroTask<void> executeSetTask(Player* player, BlockPos p1, BlockPos p2
             std::unique_ptr<CompoundTag> oldNbt = nullptr;
             if (auto* actor = region.getBlockEntity(targetPos)) {
                 oldNbt = std::make_unique<CompoundTag>();
-                actor->save(*oldNbt);
+                actor->save(*oldNbt, SaveContext());
                 region.removeBlockEntity(targetPos);
             }
 

@@ -7,6 +7,7 @@
 #include "mc/world/level/BlockSource.h"
 #include "mc/world/level/block/BlockChangeContext.h"
 #include "mc/world/level/block/actor/BlockActor.h"
+#include "mc/world/level/block/actor/SaveContext.h"
 #include "ll/api/coro/CoroTask.h"
 #include "ll/api/thread/ServerThreadExecutor.h"
 #include "ll/api/chrono/GameChrono.h"
@@ -35,7 +36,7 @@ ll::coro::CoroTask<void> executeRedoTask(Player* player, EditAction action) {
         std::unique_ptr<CompoundTag> currentNbt = nullptr;
         if (auto* actor = region.getBlockEntity(it->pos)) {
             currentNbt = std::make_unique<CompoundTag>();
-            actor->save(*currentNbt);
+            actor->save(*currentNbt, SaveContext());
             region.removeBlockEntity(it->pos);
         }
 
