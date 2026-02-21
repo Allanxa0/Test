@@ -119,7 +119,7 @@ void SessionManager::updateSelectionVisuals(Player& player) {
     int maxY = std::max(p1.y, p2.y);
     int maxZ = std::max(p1.z, p2.z);
 
-    int hideY = player.getDimension().getMinHeight();
+    int hideY = -64;
     BlockPos pos(minX, hideY, minZ);
 
     auto visualBlockOpt = Block::tryGetFromRegistry(HashedString("minecraft:structure_block"));
@@ -136,18 +136,18 @@ void SessionManager::updateSelectionVisuals(Player& player) {
     player.sendNetworkPacket(packet);
 
     CompoundTag tag;
-    tag.putString("id", "StructureBlock");
-    tag.putInt("x", pos.x);
-    tag.putInt("y", pos.y);
-    tag.putInt("z", pos.z);
-    tag.putInt("xStructureSize", maxX - minX + 1);
-    tag.putInt("yStructureSize", maxY - minY + 1);
-    tag.putInt("zStructureSize", maxZ - minZ + 1);
-    tag.putInt("xStructureOffset", 0);
-    tag.putInt("yStructureOffset", minY - hideY);
-    tag.putInt("zStructureOffset", 0);
-    tag.putByte("showBoundingBox", 1);
-    tag.putString("structureName", "we_selection");
+    tag["id"] = std::string("StructureBlock");
+    tag["x"] = pos.x;
+    tag["y"] = pos.y;
+    tag["z"] = pos.z;
+    tag["xStructureSize"] = maxX - minX + 1;
+    tag["yStructureSize"] = maxY - minY + 1;
+    tag["zStructureSize"] = maxZ - minZ + 1;
+    tag["xStructureOffset"] = 0;
+    tag["yStructureOffset"] = minY - hideY;
+    tag["zStructureOffset"] = 0;
+    tag["showBoundingBox"] = static_cast<unsigned char>(1);
+    tag["structureName"] = std::string("we_selection");
 
     BlockActorDataPacket dataPacket;
     dataPacket.mPos = NetworkBlockPosition(pos);
