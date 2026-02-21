@@ -149,9 +149,11 @@ void SessionManager::updateSelectionVisuals(Player& player) {
     tag["showBoundingBox"] = static_cast<unsigned char>(1);
     tag["structureName"] = std::string("we_selection");
 
-    BlockActorDataPacket dataPacket;
-    dataPacket.mPos = NetworkBlockPosition(pos);
-    dataPacket.mData = tag;
+    BlockActorDataPacketPayload payload;
+    payload.mPos = NetworkBlockPosition(pos);
+    payload.mData = std::move(tag);
+
+    BlockActorDataPacket dataPacket(std::move(payload));
     player.sendNetworkPacket(dataPacket);
 }
 
