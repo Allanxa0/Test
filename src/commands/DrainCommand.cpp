@@ -36,8 +36,9 @@ ll::coro::CoroTask<void> executeDrainTask(std::string xuid, BlockPos center, int
     auto& region = player->getDimension().getBlockSourceFromMainChunkSource();
     BlockChangeContext context(true);
 
-    const Block* airBlock = Block::tryGetFromRegistry(std::string_view("minecraft:air")).value_or(nullptr);
-    if (!airBlock) co_return;
+    auto airBlockOpt = Block::tryGetFromRegistry("minecraft:air");
+    if (!airBlockOpt) co_return;
+    const Block* airBlock = &(*airBlockOpt);
 
     std::map<ChunkPos, std::vector<BlockPos>> chunkBatches;
     
@@ -65,8 +66,9 @@ ll::coro::CoroTask<void> executeDrainTask(std::string xuid, BlockPos center, int
 
         for (const auto& targetPos : blocks) {
             const Block& oldBlock = region.getBlock(targetPos);
+            const std::string& typeName = oldBlock.getTypeName();
             
-            if (oldBlock.getBlockType().getMaterial().isLiquid()) {
+            if (typeName == "minecraft:water" || typeName == "minecraft:flowing_water" || typeName == "minecraft:lava" || typeName == "minecraft:flowing_lava") {
                 std::unique_ptr<CompoundTag> oldNbt = nullptr;
                 if (auto* actor = region.getBlockEntity(targetPos)) {
                     oldNbt = std::make_unique<CompoundTag>();

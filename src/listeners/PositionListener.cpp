@@ -5,8 +5,6 @@
 #include "ll/api/event/player/PlayerDestroyBlockEvent.h"
 #include "ll/api/event/player/PlayerInteractBlockEvent.h"
 #include "ll/api/event/player/PlayerJoinEvent.h"
-#include "ll/api/event/network/PacketInEvent.h"
-#include "mc/network/packet/MovePlayerPacket.h"
 #include "mc/world/item/ItemStack.h"
 #include "mc/world/item/Item.h"
 #include "mc/world/actor/player/Player.h"
@@ -55,13 +53,6 @@ void PositionListener::registerListeners() {
         WorldEditMod::getInstance().getSessionManager().updateSelectionVisuals(ev.self());
     });
     bus.addListener<ll::event::player::PlayerJoinEvent>(joinListener);
-
-    auto movePacketListener = ll::event::Listener<ll::event::network::PacketInEvent<MovePlayerPacket>>::create([](ll::event::network::PacketInEvent<MovePlayerPacket>& ev) {
-        if (ev.mPlayer) {
-            WorldEditMod::getInstance().getSessionManager().checkAndResendVisuals(*ev.mPlayer);
-        }
-    });
-    bus.addListener<ll::event::network::PacketInEvent<MovePlayerPacket>>(movePacketListener);
 }
 
 }
