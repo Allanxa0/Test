@@ -9,6 +9,8 @@ void registerUndoCommand();
 void registerRedoCommand();
 void registerCopyCommand();
 void registerPasteCommand();
+void registerDrainCommand();
+void registerSchematicCommand();
 
 void WECommands::registerCommands() {
     registerPosCommands();
@@ -18,6 +20,8 @@ void WECommands::registerCommands() {
     registerRedoCommand();
     registerCopyCommand();
     registerPasteCommand();
+    registerDrainCommand();
+    registerSchematicCommand();
 }
 
 }

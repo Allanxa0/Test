@@ -4,6 +4,9 @@
 #include "ll/api/event/Listener.h"
 #include "ll/api/event/player/PlayerDestroyBlockEvent.h"
 #include "ll/api/event/player/PlayerInteractBlockEvent.h"
+#include "ll/api/event/player/PlayerJoinEvent.h"
+#include "ll/api/event/network/PacketInEvent.h"
+#include "mc/network/packet/MovePlayerPacket.h"
 #include "mc/world/item/ItemStack.h"
 #include "mc/world/item/Item.h"
 #include "mc/world/actor/player/Player.h"
@@ -17,17 +20,14 @@ void PositionListener::registerListeners() {
     auto destroyListener = ll::event::Listener<ll::event::player::PlayerDestroyBlockEvent>::create([](ll::event::player::PlayerDestroyBlockEvent& ev) {
         auto& player = ev.self();
         auto& item = player.getSelectedItem();
-        
         if (!item.isNull() && item.getItem() && item.getItem()->getSerializedName() == "minecraft:wooden_axe") {
             if (!WorldEditMod::getInstance().getSessionManager().canUseWand(player)) {
                 ev.cancel(); 
                 return;
             }
-
             BlockPos pos = ev.pos();
             WorldEditMod::getInstance().getSessionManager().setPos1(player, pos);
             WorldEditMod::getInstance().getSessionManager().updateWandUsage(player);
-            
             player.sendMessage("§dPrimera posición establecida en " + pos.toString());
             ev.cancel();
         }
@@ -37,23 +37,31 @@ void PositionListener::registerListeners() {
     auto interactListener = ll::event::Listener<ll::event::player::PlayerInteractBlockEvent>::create([](ll::event::player::PlayerInteractBlockEvent& ev) {
         auto& player = ev.self();
         auto& item = player.getSelectedItem();
-
         if (!item.isNull() && item.getItem() && item.getItem()->getSerializedName() == "minecraft:wooden_axe") {
             if (!WorldEditMod::getInstance().getSessionManager().canUseWand(player)) {
                 ev.cancel();
                 return;
             }
-
             BlockPos pos = ev.blockPos();
             WorldEditMod::getInstance().getSessionManager().setPos2(player, pos);
             WorldEditMod::getInstance().getSessionManager().updateWandUsage(player);
-
             player.sendMessage("§dSegunda posición establecida en " + pos.toString());
             ev.cancel();
         }
     });
     bus.addListener<ll::event::player::PlayerInteractBlockEvent>(interactListener);
+
+    auto joinListener = ll::event::Listener<ll::event::player::PlayerJoinEvent>::create([](ll::event::player::PlayerJoinEvent& ev) {
+        WorldEditMod::getInstance().getSessionManager().updateSelectionVisuals(ev.self());
+    });
+    bus.addListener<ll::event::player::PlayerJoinEvent>(joinListener);
+
+    auto movePacketListener = ll::event::Listener<ll::event::network::PacketInEvent<MovePlayerPacket>>::create([](ll::event::network::PacketInEvent<MovePlayerPacket>& ev) {
+        if (ev.mPlayer) {
+            WorldEditMod::getInstance().getSessionManager().checkAndResendVisuals(*ev.mPlayer);
+        }
+    });
+    bus.addListener<ll::event::network::PacketInEvent<MovePlayerPacket>>(movePacketListener);
 }
 
 }
-
