@@ -2,9 +2,11 @@
 #include "mc/world/level/dimension/Dimension.h"
 #include "mc/world/level/BlockSource.h"
 #include "mc/network/packet/UpdateBlockPacket.h"
+#include "mc/network/packet/BlockActorDataPacket.h"
 #include "mc/world/level/block/Block.h"
 #include "mc/deps/core/string/HashedString.h"
 #include "mc/network/NetworkBlockPosition.h"
+#include "mc/nbt/CompoundTag.h"
 #include <algorithm>
 
 namespace my_mod {
@@ -117,40 +119,40 @@ void SessionManager::updateSelectionVisuals(Player& player) {
     int maxY = std::max(p1.y, p2.y);
     int maxZ = std::max(p1.z, p2.z);
 
-    auto visualBlockOpt = Block::tryGetFromRegistry(HashedString("minecraft:glass"));
-    if (!visualBlockOpt) return; 
-    
-    uint32_t visualRuntimeId = visualBlockOpt->mNetworkId;
+    int hideY = player.getDimension().getMinHeight();
+    BlockPos pos(minX, hideY, minZ);
+
+    auto visualBlockOpt = Block::tryGetFromRegistry(HashedString("minecraft:structure_block"));
+    if (!visualBlockOpt) return;
 
     std::vector<BlockPos>& visuals = mVisualBlocks[player.getXuid()];
-    
-    for (int x = minX; x <= maxX; ++x) {
-        for (int y = minY; y <= maxY; ++y) {
-            for (int z = minZ; z <= maxZ; ++z) {
-                bool isMinX = (x == minX);
-                bool isMaxX = (x == maxX);
-                bool isMinY = (y == minY);
-                bool isMaxY = (y == maxY);
-                bool isMinZ = (z == minZ);
-                bool isMaxZ = (z == maxZ);
+    visuals.push_back(pos);
 
-                int edgeCount = (isMinX || isMaxX ? 1 : 0) + (isMinY || isMaxY ? 1 : 0) + (isMinZ || isMaxZ ? 1 : 0);
+    UpdateBlockPacket packet;
+    packet.mPos = NetworkBlockPosition(pos);
+    packet.mLayer = 0;
+    packet.mUpdateFlags = 3;
+    packet.mRuntimeId = visualBlockOpt->mNetworkId;
+    player.sendNetworkPacket(packet);
 
-                if (edgeCount >= 2) {
-                    BlockPos pos(x, y, z);
-                    visuals.push_back(pos);
+    CompoundTag tag;
+    tag.putString("id", "StructureBlock");
+    tag.putInt("x", pos.x);
+    tag.putInt("y", pos.y);
+    tag.putInt("z", pos.z);
+    tag.putInt("xStructureSize", maxX - minX + 1);
+    tag.putInt("yStructureSize", maxY - minY + 1);
+    tag.putInt("zStructureSize", maxZ - minZ + 1);
+    tag.putInt("xStructureOffset", 0);
+    tag.putInt("yStructureOffset", minY - hideY);
+    tag.putInt("zStructureOffset", 0);
+    tag.putByte("showBoundingBox", 1);
+    tag.putString("structureName", "we_selection");
 
-                    UpdateBlockPacket packet;
-                    packet.mPos = NetworkBlockPosition(pos);
-                    packet.mLayer = 0;
-                    packet.mUpdateFlags = 3;
-                    packet.mRuntimeId = visualRuntimeId;
-                    
-                    player.sendNetworkPacket(packet);
-                }
-            }
-        }
-    }
+    BlockActorDataPacket dataPacket;
+    dataPacket.mPos = NetworkBlockPosition(pos);
+    dataPacket.mData = tag;
+    player.sendNetworkPacket(dataPacket);
 }
 
 void SessionManager::onPlayerLeft(Player& player) {
