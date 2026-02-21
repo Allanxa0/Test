@@ -4,38 +4,10 @@
 #include "ll/api/command/Command.h"
 #include "mc/server/commands/CommandOutput.h"
 #include "mc/world/actor/player/Player.h"
+#include "mc/world/level/BlockPos.h"
 #include "mc/deps/core/math/Vec3.h"
-#include "mc/world/level/BlockSource.h"
-#include "mc/world/phys/HitResult.h"
-#include "mc/world/level/ShapeType.h"
-#include "mc/world/level/dimension/Dimension.h"
 
 namespace my_mod {
-
-BlockPos getTargetBlock(Player* player) {
-    const float maxDist = 20.0f;
-    Vec3 pos = player->getEyePos();
-    Vec3 dir = player->getViewVector(1.0f);
-    Vec3 end = pos + (dir * maxDist);
-
-    HitResult hit = player->getDimension().getBlockSourceFromMainChunkSource().clip(
-        pos, 
-        end, 
-        false, 
-        ShapeType::Outline, 
-        static_cast<int>(maxDist), 
-        false, 
-        false, 
-        player, 
-        nullptr, 
-        false
-    );
-    
-    if (hit.mType == HitResultType::Tile) {
-        return hit.mBlock;
-    }
-    return BlockPos(player->getPosition());
-}
 
 void registerPosCommands() {
     auto& registrar = ll::command::CommandRegistrar::getInstance(false);
@@ -49,7 +21,7 @@ void registerPosCommands() {
         }
 
         auto* player = static_cast<Player*>(entity);
-        BlockPos pos = getTargetBlock(player);
+        BlockPos pos(player->getPosition());
         
         WorldEditMod::getInstance().getSessionManager().setPos1(*player, pos);
         
@@ -65,7 +37,7 @@ void registerPosCommands() {
         }
 
         auto* player = static_cast<Player*>(entity);
-        BlockPos pos = getTargetBlock(player);
+        BlockPos pos(player->getPosition());
 
         WorldEditMod::getInstance().getSessionManager().setPos2(*player, pos);
 

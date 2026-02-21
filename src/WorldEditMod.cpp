@@ -5,6 +5,7 @@
 #include "ll/api/event/EventBus.h"
 #include "ll/api/event/Listener.h"
 #include "ll/api/event/player/PlayerDisconnectEvent.h"
+#include "ll/api/Config.h"
 
 namespace my_mod {
 
@@ -14,6 +15,8 @@ WorldEditMod& WorldEditMod::getInstance() {
 }
 
 bool WorldEditMod::load() {
+    ll::config::loadConfig(mConfig, getSelf().getConfigDir() / "config.json");
+    ll::config::saveConfig(mConfig, getSelf().getConfigDir() / "config.json");
     return true;
 }
 

@@ -1,4 +1,5 @@
 #include "SessionManager.h"
+#include "WorldEditMod.h"
 #include "mc/world/level/dimension/Dimension.h"
 #include "mc/world/level/BlockSource.h"
 #include "mc/network/packet/UpdateBlockPacket.h"
@@ -24,7 +25,7 @@ bool SessionManager::canUseWand(Player& player) {
     auto& session = mSessions[player.getXuid()];
     auto now = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - session.lastWandUse).count();
-    return elapsed >= WAND_COOLDOWN_MS;
+    return elapsed >= WorldEditMod::getInstance().getConfig().wandCooldownMs;
 }
 
 void SessionManager::updateWandUsage(Player& player) {
@@ -48,7 +49,7 @@ void SessionManager::setPos2(Player& player, const BlockPos& pos) {
 void SessionManager::pushHistory(Player& player, EditAction&& action) {
     auto& history = mUndoHistory[player.getXuid()];
     history.push_back(std::move(action));
-    if (history.size() > MAX_HISTORY_SIZE) {
+    if (history.size() > WorldEditMod::getInstance().getConfig().maxHistorySize) {
         history.pop_front();
     }
     mRedoHistory[player.getXuid()].clear();
@@ -66,7 +67,7 @@ std::optional<EditAction> SessionManager::popUndo(Player& player) {
 void SessionManager::pushRedo(Player& player, EditAction&& action) {
     auto& history = mRedoHistory[player.getXuid()];
     history.push_back(std::move(action));
-    if (history.size() > MAX_HISTORY_SIZE) {
+    if (history.size() > WorldEditMod::getInstance().getConfig().maxHistorySize) {
         history.pop_front();
     }
 }
@@ -78,6 +79,14 @@ std::optional<EditAction> SessionManager::popRedo(Player& player) {
     auto action = std::move(history.back());
     history.pop_back();
     return action;
+}
+
+void SessionManager::setClipboard(Player& player, std::vector<ClipboardItem>&& clipboard) {
+    mClipboards[player.getXuid()] = std::move(clipboard);
+}
+
+std::vector<ClipboardItem>& SessionManager::getClipboard(Player& player) {
+    return mClipboards[player.getXuid()];
 }
 
 void SessionManager::clearSelectionVisuals(Player& player) {
@@ -155,10 +164,9 @@ void SessionManager::updateSelectionVisuals(Player& player) {
 }
 
 void SessionManager::onPlayerLeft(Player& player) {
-    mSessions.erase(player.getXuid());
-    mUndoHistory.erase(player.getXuid());
-    mRedoHistory.erase(player.getXuid());
+    clearSelectionVisuals(player);
     mVisualBlocks.erase(player.getXuid());
 }
 
 }
+

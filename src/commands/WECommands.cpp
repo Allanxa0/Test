@@ -7,6 +7,8 @@ void registerWandCommand();
 void registerSetCommand();
 void registerUndoCommand();
 void registerRedoCommand();
+void registerCopyCommand();
+void registerPasteCommand();
 
 void WECommands::registerCommands() {
     registerPosCommands();
@@ -14,6 +16,8 @@ void WECommands::registerCommands() {
     registerSetCommand();
     registerUndoCommand();
     registerRedoCommand();
+    registerCopyCommand();
+    registerPasteCommand();
 }
 
 }

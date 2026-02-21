@@ -2,6 +2,7 @@
 
 #include "ll/api/mod/NativeMod.h"
 #include "core/SessionManager.h"
+#include "core/Config.h"
 
 namespace my_mod {
 
@@ -20,6 +21,10 @@ public:
         return mSessionManager;
     }
 
+    [[nodiscard]] Config& getConfig() {
+        return mConfig;
+    }
+
     bool load();
     bool enable();
     bool disable();
@@ -27,6 +32,8 @@ public:
 private:
     ll::mod::NativeMod& mSelf;
     SessionManager mSessionManager;
+    Config mConfig;
 };
 
 }
+

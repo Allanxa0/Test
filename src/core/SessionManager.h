@@ -24,6 +24,12 @@ struct EditAction {
     std::vector<BlockEdit> blocks;
 };
 
+struct ClipboardItem {
+    BlockPos offset;
+    const Block* block;
+    std::unique_ptr<CompoundTag> nbt;
+};
+
 struct PlayerSession {
     Selection selection;
     std::chrono::steady_clock::time_point lastWandUse;
@@ -44,6 +50,9 @@ public:
     void pushRedo(Player& player, EditAction&& action);
     std::optional<EditAction> popRedo(Player& player);
 
+    void setClipboard(Player& player, std::vector<ClipboardItem>&& clipboard);
+    std::vector<ClipboardItem>& getClipboard(Player& player);
+
     void updateSelectionVisuals(Player& player);
     void clearSelectionVisuals(Player& player);
     void onPlayerLeft(Player& player);
@@ -53,9 +62,7 @@ private:
     std::unordered_map<std::string, std::deque<EditAction>> mUndoHistory;
     std::unordered_map<std::string, std::deque<EditAction>> mRedoHistory;
     std::unordered_map<std::string, std::vector<BlockPos>> mVisualBlocks;
-
-    static constexpr int MAX_HISTORY_SIZE = 10;
-    static constexpr int WAND_COOLDOWN_MS = 400;
+    std::unordered_map<std::string, std::vector<ClipboardItem>> mClipboards;
 };
 
 }

@@ -112,18 +112,22 @@ ll::coro::CoroTask<void> executeSetTask(Player* player, BlockPos p1, BlockPos p2
     int maxY = std::max(p1.y, p2.y);
     int maxZ = std::max(p1.z, p2.z);
 
+    int count = (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
+    if (count > WorldEditMod::getInstance().getConfig().maxBlocksPerOperation) {
+        player->sendMessage("§cOperation exceeds maximum block limit.");
+        co_return;
+    }
+
     auto& region = player->getDimension().getBlockSourceFromMainChunkSource();
     BlockChangeContext context(true); 
     
     std::map<ChunkPos, std::vector<BlockPos>> chunkBatches;
     
-    int count = 0;
     for (int x = minX; x <= maxX; ++x) {
         for (int z = minZ; z <= maxZ; ++z) {
             ChunkPos cp(x >> 4, z >> 4);
             for (int y = minY; y <= maxY; ++y) {
                 chunkBatches[cp].emplace_back(x, y, z);
-                count++;
             }
         }
     }
@@ -226,3 +230,4 @@ void registerSetCommand() {
 }
 
 }
+
