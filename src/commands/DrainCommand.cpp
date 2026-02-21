@@ -18,7 +18,9 @@
 #include "ll/api/service/Bedrock.h"
 #include "mc/world/level/Level.h"
 #include "mc/world/level/block/BlockType.h"
+#include "mc/deps/core/string/HashedString.h"
 #include <string_view>
+#include <map>
 
 namespace my_mod {
 
@@ -36,7 +38,7 @@ ll::coro::CoroTask<void> executeDrainTask(std::string xuid, BlockPos center, int
     auto& region = player->getDimension().getBlockSourceFromMainChunkSource();
     BlockChangeContext context(true);
 
-    auto airBlockOpt = Block::tryGetFromRegistry("minecraft:air");
+    auto airBlockOpt = Block::tryGetFromRegistry(HashedString("minecraft:air"));
     if (!airBlockOpt) co_return;
     const Block& airBlock = airBlockOpt.value();
 
